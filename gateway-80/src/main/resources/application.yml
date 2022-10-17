@@ -1,0 +1,45 @@
+#服务的名称
+spring:
+  application:
+    name: gateway-80
+
+  #--------------------------gateway的配置------------------------
+  #给search-service的/doSearch接口配置个路由
+  cloud:
+    gateway:
+      routes:
+        #路由id
+        - id: search-service-router
+          #路由到的服务的url地址
+          uri: lb://search-service
+          #路由的断言(url接口的断言)
+          predicates:
+            - Path=/doSearch
+          #给当前路由配置过滤器
+          filters:
+            #过滤器的名称 -- 因为是个内置过滤,所以名称是固定
+            - name: RequestRateLimiter
+              #过滤器的参数项
+              args:
+                #限流的key的解析器 -- 明确限流的依据
+                key-resolver: '#{@urlKeyResolver}'
+                #令牌生产令牌的速率 -- 值1就代表1秒生产1个令牌
+                redis-rate-limiter.replenishRate: 1
+                #令牌的容量 -- 令牌桶的容量最多3个令牌
+                redis-rate-limiter.burstCapacity: 3
+
+  #----------------------------配置Redis----------------------------
+  redis:
+    host: 192.168.3.111
+    port: 6379
+    database: 19
+
+#服务的端口
+server:
+  port: 80
+#注册到注册中心
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
